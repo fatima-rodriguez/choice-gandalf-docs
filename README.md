@@ -73,6 +73,7 @@ Slack's Socket Mode uses a persistent WebSocket. Cloud Run with `--min-instances
    - `im:write`
    - `groups:history`
    - `users:read`
+You will need to follow the steps to ask for DH Approval. 
 3. Under **Socket Mode**, enable it and generate an **App-Level Token** with scope `connections:write` → save as `SLACK_APP_TOKEN`
 4. Install the app to your workspace → copy the **Bot User OAuth Token** → save as `SLACK_BOT_TOKEN`
 5. Invite the bot to the channel you want it to monitor: `/invite @your-bot-name`
