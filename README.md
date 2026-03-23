@@ -201,6 +201,51 @@ Edit `detect_jira_intent()` in `bot.py`. Only include keywords that are unambigu
 
 ---
 
+## Cost monitoring
+
+### What generates cost
+| Service | When | Billed by |
+|---|---|---|
+| Vertex AI — Gemini 2.5 Flash | Every bot response | Input + output tokens |
+| Vertex AI — text-embedding-005 | Only when rebuilding RAG index | Tokens embedded |
+| Cloud Run | Always (min 1 instance) | vCPU + memory per second |
+| Container Registry | Image storage | GB stored |
+| Secret Manager | Negligible | API calls |
+
+### Token logging
+The bot logs token usage for every Gemini call to Cloud Run logs:
+```
+💰 Gemini usage — in: 4,231 tokens, out: 312 tokens, total: 4,543 tokens
+```
+Token counts are high when Confluence pages are large (they're included in every system instruction). To reduce cost, load only the pages most relevant to your team.
+
+To stream logs and watch usage in real time:
+```bash
+gcloud run services logs read YOUR-SERVICE-NAME --region us-central1 --project YOUR-PROJECT-ID
+```
+
+### Viewing costs in GCP
+1. Go to [console.cloud.google.com/billing](https://console.cloud.google.com/billing)
+2. Select your billing account → **Reports**
+3. Filter by project → break down by **Service** to see Vertex AI vs Cloud Run separately
+
+### Setting a budget alert
+```bash
+gcloud billing budgets create \
+  --billing-account=YOUR_BILLING_ACCOUNT_ID \
+  --display-name="Gandalf bot budget" \
+  --budget-amount=50USD \
+  --threshold-rule=percent=0.5 \
+  --threshold-rule=percent=0.9 \
+  --threshold-rule=percent=1.0
+```
+Find your billing account ID: `gcloud billing accounts list`
+
+### Tips to reduce cost
+- **Confluence pages**: only load the pages your users actually ask about — each page adds to every request's input token count
+- **RAG results**: reduce `n_results` in `rag.py` from 5 to 3 if responses are fast enough without the extra context
+- **Cloud Run**: if the bot is only needed during business hours, you can schedule it to scale down overnight (remove `--min-instances=1` and accept that it won't hold a WebSocket connection — you'd need to switch from Socket Mode to HTTP events)
+
 ## Maintenance
 
 ### Refresh the Slack history index
